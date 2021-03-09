@@ -49,6 +49,17 @@ let fail_if_not_admin (storage : simple_admin_storage) (extra_msg : string optio
         else unit
     | None -> unit
 
+(*Version of 'fail_if_not_admin' without extra message.
+  It is more efficient, unless 'fail_if_not_admin' also has to be used across the contract.
+*)
+let fail_if_not_admin_simple (storage : simple_admin_storage) : unit =
+  match storage with
+    | Some a ->
+        if Tezos.sender <> a.admin
+        then failwith "NOT_AN_ADMIN"
+        else unit
+    | None -> unit
+
 (*Only callable by admin*)
 let set_admin (new_admin, storage : address * simple_admin_storage) : simple_admin_storage =
   let u = fail_if_not_admin storage in
