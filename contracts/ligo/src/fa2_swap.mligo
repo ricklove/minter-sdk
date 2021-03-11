@@ -11,11 +11,16 @@ In case you are implementing a client for this contract, please see
 
 type swap_id = nat
 
-type fa2_asset =
+type fa2_token =
+  [@layout:comb]
+  { token_id : FA2.token_id
+  ; amount : nat
+  }
+
+type fa2_assets =
   [@layout:comb]
   { fa2_address : address
-  ; token_id : nat
-  ; amount : nat
+  ; tokens : fa2_token list
   }
 
 type swap_status =
@@ -26,8 +31,8 @@ type swap_status =
 
 type swap_offer =
   [@layout:comb]
-  { assets_offered : fa2_asset list
-  ; assets_requested : fa2_asset list
+  { assets_offered : fa2_assets list
+  ; assets_requested : fa2_assets list
   }
 
 type swap_info =
@@ -73,15 +78,22 @@ let fa2_transfer_entrypoint(fa2, on_invalid_fa2 : address * string)
   | None -> (failwith on_invalid_fa2 : (FA2.transfer list) contract)
   | Some c ->  c
 
-let transfer_asset(from_, to_, on_invalid_fa2 : address * address * string)(asset : fa2_asset)
+let transfer_asset(from_, to_, on_invalid_fa2 : address * address * string)(asset : fa2_assets)
     : operation =
   let transfer_ep = fa2_transfer_entrypoint(asset.fa2_address, on_invalid_fa2) in
-  let tx_dest : FA2.transfer_destination =
-    { to_ = to_
-    ; token_id = asset.token_id
-    ; amount = asset.amount
-    } in
-  let param = ([{ from_ = from_; txs = [tx_dest] }] : FA2.transfer list) in
+  let token_to_tx(token : fa2_token) : FA2.transfer =
+        { from_ = from_
+        ; txs =
+          [ { to_ = to_
+            ; token_id = token.token_id
+            ; amount = token.amount
+            }
+          ]
+        }
+        in
+  // TODO: maybe expect assets grouped by 'from_' as well? Since FA2 does so.
+  // Probably it may be slightly more efficient, but would complicate the interface even further.
+  let param = List.map token_to_tx asset.tokens in
   Tezos.transaction param 0mutez transfer_ep
 
 [@inline]

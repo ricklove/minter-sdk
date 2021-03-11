@@ -24,8 +24,8 @@ let swap_check_whitelist(whitelist, swap_param : whitelist * swap_entrypoints) :
   match swap_param with
     Start swap_offer ->
       [@inline]
-      let check_asset(asset : fa2_asset) : unit =
-        match Big_map.find_opt asset.fa2_address whitelist with
+      let check_asset(assets : fa2_assets) : unit =
+        match Big_map.find_opt assets.fa2_address whitelist with
         | Some u -> ()
         | None -> failwith("SWAP_FA2_NOT_WHITELISTED")
         in
